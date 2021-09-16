@@ -14,43 +14,6 @@ import sys
 import time
 from shutil import which
 import psutil
-import tkinter as tk  # to get screen dimensions
-import re
-
-
-def get_curr_screen_geometry() -> str:
-    """Workaround to get the size of the current screen in a multi-screen setup.
-    Returns:
-        geometry (str): The standard Tk geometry string.
-            [width]x[height]+[left]+[top]
-    From: https://stackoverflow.com/a/56913005/1815288
-    """
-    root = tk.Tk()
-    root.update_idletasks()
-    root.attributes('-fullscreen', True)
-    root.state('iconic')
-    geometry = root.winfo_geometry()
-    root.destroy()
-    return geometry
-
-
-def relocate_emacs_window() -> bool:
-    emacs_pid = get_emacs_pid()
-    emacs_wid = get_emacs_wid(emacs_pid)
-    subprocess.run(['xdotool', 'windowmove', emacs_wid, '0', '0'],
-                   stdout=subprocess.PIPE)
-    geometry = get_curr_screen_geometry()
-    pattern = re.compile(r'(\d+)x(\d+).+')
-    match = re.search(pattern, geometry)
-    if match:
-        width = match.group(1)
-        height = match.group(2)
-        width = str(int(width) / 2)
-        subprocess.run(['xdotool', 'windowsize', emacs_wid, width, height],
-                       stdout=subprocess.PIPE)
-        return True
-    else:
-        return False
 
 
 def check_if_process_running(process_name: str) -> bool:
@@ -152,8 +115,8 @@ def main():
         else:
             run_emacs()
 
-    time.sleep(3)  # wait until Emacs loads...
-    relocate_emacs_window()
+    # time.sleep(3)  # wait until Emacs loads...
+    # relocate_emacs_window()
 
 
 if __name__ == '__main__':
