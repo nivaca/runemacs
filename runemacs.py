@@ -14,21 +14,27 @@ import sys
 import time
 from shutil import which
 import psutil
+from pprint import pprint as pp
 
+WAITTIME = 3  # time to wait before loading file
 
 def check_if_process_running(process_name: str) -> bool:
     """ Check if there is any running process which
     contains the given name processName. """
     # Iterate over the all the running process.
+    processes = []
     for proc in psutil.process_iter():
         try:
             # Check if process name contains the given name string.
             if process_name.lower() in proc.name().lower():
-                return True
+                processes.append(proc)
         except (psutil.NoSuchProcess, psutil.AccessDenied,
                 psutil.ZombieProcess):
             pass
-    return False
+    if len(processes) > 0:
+        return True
+    else:
+        return False
 
 
 def get_emacs_pid() -> int:
@@ -44,7 +50,12 @@ def get_emacs_wid(eid: int) -> str:
     it only returns the last one of the list. """
     result = subprocess.run(['xdotool', 'search', '--pid', f'{eid}'],
                             stdout=subprocess.PIPE)
-    return result.stdout.decode('utf-8').split()[-1]
+    # pp(result.stdout.decode('utf-8'))
+    # exit(0)
+    if result.stdout.decode('utf-8') != '':
+        return result.stdout.decode('utf-8').split()[-1]
+    else:
+        return ''
 
 
 def run_emacs_client(filename: str):
@@ -95,29 +106,22 @@ def main():
             subprocess.Popen(['xdotool', 'windowactivate',
                               f'{emacs_wid}'], stdout=subprocess.PIPE)
 
-    # Emacs is not already running
+    # Emacs is not running
     else:
         # Case 3: Emacs is not running and one or many files are given
         if inputfilegiven:
-            if len(inputfiles) == 1:
-                run_emacs(inputfiles[0])
-            else:
-                subprocess.Popen(['emacs'])
-                time.sleep(3)
-                # Wait until emacs completely loads.
-                # This is necesary in order for emacs server to be loaded
+            subprocess.Popen(['emacs'])
+            time.sleep(WAITTIME)
+            # Wait until emacs completely loads.
+            # This is necesary in order for emacs server to be loaded
 
-                # and now load each of the files with emacsclient
-                for filename in inputfiles:
-                    run_emacs_client(filename)
+            # and now load each of the files with emacsclient
+            for filename in inputfiles:
+                run_emacs_client(filename)
 
         # Case 4: Emacs is not running and no file is given
         else:
             run_emacs()
-
-    # time.sleep(3)  # wait until Emacs loads...
-    # relocate_emacs_window()
-
 
 if __name__ == '__main__':
     main()
